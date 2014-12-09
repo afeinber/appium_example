@@ -1,11 +1,18 @@
-require 'rspec'
+# require 'rspec'
 require 'appium_lib'
 require 'appium_capybara'
-require 'json'
-require 'rest_client'
 require 'capybara/rspec'
 require 'pry'
 
+module Capybara
+  module Selenium
+    class Driver
+      def browser_initialized?
+        return false
+      end
+    end
+  end
+end
 
 driver = nil
 
@@ -20,28 +27,56 @@ Capybara.register_driver(:appium) do |app|
   driver = Appium::Capybara::Driver.new app, all_options
 end
 
-Capybara.default_driver = :appium
+Capybara.register_driver :selenium do |app|
+  Capybara::Selenium::Driver.new(app, :browser => :firefox)
+end
+
+# Capybara.default_driver = :appium
 Capybara.server_host = '0.0.0.0' # Listen to all interfaces
 Capybara.server_port = 56844     # Open port TCP 56844, change at your convenience
 
 describe 'visit hope page', :type => :feature do
-  # before(:each) do
-  #   Appium::Driver.new(desired_caps_ios).start_driver
-  #   Appium.promote_appium_methods RSpec::Core::ExampleGroup
-  # end
 
-  after(:each) do
-    # Get the success by checking for assertion exceptions,
-    # and log them against the job, which is exposed by the session_id
-    # job_id = driver.send(:bridge).session_id
-    # update_job_success(job_id, example.exception.nil?)
+
+  after(:all) do
+
     driver.quit
+
   end
 
-  it 'should show Trending repositories' do
-    visit("https://github.com")
-    find('button', text: 'Sign up for GitHub').click
-    expect(page).to have_content "Join GitHub"
+  it 'should log in to our site' do
+
+    Capybara.current_driver = :appium
+
+    visit('https://qa-int-playlist.ampaxs.com')
+    find('#get-started-button').click
+
+
+
+    fill_in 'Email', with: 'amplifytest469@amplifydev.net'
+    fill_in 'Password', with: 'MayanParty2012'
+    click_on 'Sign in'
+    click_on 'Accept'
+
+
+    Capybara.current_driver = :selenium
+
+    visit('https://qa-int-playlist.ampaxs.com')
+    find('#get-started-button').click
+
+
+
+    fill_in 'Email', with: 'amplifytest471@amplifydev.net'
+    fill_in 'Password', with: 'MayanParty2012'
+    click_on 'Sign in'
+    click_on 'Accept'
+
+
+    Capybara.current_driver = :appium
+
+    click_on 'Logout'
+
+
   end
 end
 
@@ -57,7 +92,6 @@ def desired_caps_ios
     platformVersion: '8.1',
     deviceName:      'iPad 2',
     browserName:     'Safari',
-    # udid:            '0d6e6aa75e62c204d6a18848140e49ecb2223896'
-    # app:             '/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator7.1.sdk/Applications/MobileSafari.app'
+    safariAllowPopups: true
   }
 end
